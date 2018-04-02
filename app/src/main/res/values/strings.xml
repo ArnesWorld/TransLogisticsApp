@@ -1,3 +1,8 @@
 <resources>
     <string name="app_name">TransLogistics-App</string>
+    <string name="lblRecId">Rec ID:</string>
+    <string name="lblPackageId">Package ID:</string>
+    <string name="lblCompany">Company:</string>
+    <string name="btnViewData">View Data</string>
+    <string name="btnSendData">Send Data</string>
 </resources>
