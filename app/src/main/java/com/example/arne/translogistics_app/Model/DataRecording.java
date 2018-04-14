@@ -15,12 +15,13 @@ import java.io.IOException;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @TypeConverters(DateConverter.class)
 public class DataRecording implements Serializable {
     static final long serialVersionUID = 123456789123456789L;
-    @PrimaryKey(autoGenerate = true)
+    @PrimaryKey
     private int id;
     @ColumnInfo(name = "rec_intervals")
     private int recordingIntervals;
@@ -35,6 +36,9 @@ public class DataRecording implements Serializable {
 
     @Ignore
     public Package pack;
+
+    @Ignore
+    public List<DataSegment> dataSegments;
 
     public DataRecording(){}
 

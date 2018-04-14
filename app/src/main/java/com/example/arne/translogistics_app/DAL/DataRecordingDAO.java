@@ -29,7 +29,7 @@ public interface DataRecordingDAO {
     void updateDataRecording(DataRecording dataRecording);
 
     @Insert(onConflict = IGNORE)
-    long insertDataRecording(DataRecording dataRecording);
+    void insertDataRecording(DataRecording dataRecording);
 
     @Query("DELETE FROM DataRecording")
     void deleteAll();

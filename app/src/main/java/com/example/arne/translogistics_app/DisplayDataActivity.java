@@ -5,4 +5,5 @@ package com.example.arne.translogistics_app;
  */
 
 public class DisplayDataActivity {
+
 }

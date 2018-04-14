@@ -1,13 +1,16 @@
 package com.example.arne.translogistics_app;
 
 import android.Manifest;
+import android.app.AlertDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.Message;
 import android.support.v4.app.ActivityCompat;
@@ -15,13 +18,18 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.example.arne.translogistics_app.DAL.AppDataBase;
 import com.example.arne.translogistics_app.Model.DataRecording;
+import com.example.arne.translogistics_app.Model.DataSegment;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,22 +57,24 @@ public class MainActivity extends AppCompatActivity {
     private BluetoothServerSocket serverSocket;
     private BluetoothSocket socket;
 
+    private Button btnDiscover;
     private ListView listViewDevices;
     private ImageButton btnRefresh;
     private ConnectedThread comThread;
     private DataRecording dataRecording;
-    Gson gson = new Gson();
+    Gson gson;
 
-    TextView txtConnedtedDevice;
+    private TextView txtConnedtedDevice;
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        gson = new GsonBuilder()
+                .setDateFormat("MMM dd, yyyy HH:mm:ss").create();
 
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-        setDiscoverability();
 
         mHandler = new Handler(){
             @Override
@@ -75,10 +85,14 @@ public class MainActivity extends AppCompatActivity {
                         // construct a DataRecording object from the valid bytes in the buffer
                         String readMessage = new String(readBuf, 0, msg.arg1);
                         dataRecording = gson.fromJson(readMessage, DataRecording.class);
-                         txtConnedtedDevice.setText(readMessage);
+                         //txtConnedtedDevice.setText(readMessage);
+                         AcceptRecordingDialog(dataRecording);
                         break;
                     case MessageConstants.MESSAGE_WRITE:
                         break;
+                    case MessageConstants.CONNECTION_ACCEPTED:
+                        String deviceName = (String)msg.obj;
+                        txtConnedtedDevice.setText(deviceName);
 
                     default:
                         Toast.makeText(getApplicationContext(), "default", Toast.LENGTH_SHORT).show();
@@ -109,8 +123,30 @@ public class MainActivity extends AppCompatActivity {
 
 
 
-        txtConnedtedDevice = findViewById(R.id.txtConnectedDevice);
-        txtConnedtedDevice.setText(bluetoothAdapter.getBondedDevices().toArray()[0].toString());
+        txtConnedtedDevice = findViewById(R.id.txtConnDevice);
+        if(bluetoothAdapter.getBondedDevices().size() != 0) {
+            boolean matchFound = false;
+            for (BluetoothDevice bd: bluetoothAdapter.getBondedDevices()) {
+               String uuidString = bd.getUuids()[0].getUuid().toString();
+               String myUuidString = uuidString.toString();
+                if(uuidString.substring(uuidString.length() -12,uuidString.length()).equals(myUuidString.substring(myUuidString.length()-12, myUuidString.length()))){
+                    BluetoothDevice device = (BluetoothDevice) bluetoothAdapter.getBondedDevices().toArray()[0];
+                    txtConnedtedDevice.setText(device.getName());
+                }
+              Object o = bd.getUuids();
+                int x = 1;
+            }
+
+
+        }
+        setDiscoverability();
+        btnDiscover = findViewById(R.id.btnDiscover);
+        btnDiscover.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                setDiscoverability();
+            }
+        });
 
     }
 
@@ -121,21 +157,57 @@ public class MainActivity extends AppCompatActivity {
         startActivityForResult(discoverableIntent, DISCOVERY_REQUEST);
     }
 
-    public static DataRecording deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
-        ByteArrayInputStream b = new ByteArrayInputStream(bytes);
-        ObjectInputStream o = new ObjectInputStream(b);
-        return (DataRecording) o.readObject();
+    private void AcceptRecordingDialog(final DataRecording dataRecording){
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setMessage("Do you want to receive this object: " + dataRecording.getId())
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        SaveDataRecordingToDb task = new SaveDataRecordingToDb();
+                        task.execute(dataRecording);
+                    }
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+        // Create the AlertDialog object and return it
+        AlertDialog dialog = builder.create();
+        dialog.show();
+    }
+
+    private class SaveDataRecordingToDb extends AsyncTask<DataRecording, Void, Void> {
+
+        @Override
+        protected Void doInBackground(DataRecording... dataRecordings) {
+            DataRecording dr = dataRecordings[0];
+            AppDataBase dataBase = AppDataBase.getInstance(getApplicationContext());
+            dataBase.dataRecordingModel().insertDataRecording(dr);
+            dataBase.packageModel().insertPackage(dr.pack);
+            for (DataSegment ds: dr.dataSegments  ) {
+                dataBase.dataSegmentModel().insertDataSegment(ds);
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            Intent intent = new Intent(getApplicationContext(),DisplayRecordingsActivity.class );
+            startActivity(intent);
+        }
     }
 
     private interface MessageConstants {
         public static final int MESSAGE_READ = 0;
         public static final int MESSAGE_WRITE = 1;
         public static final int MESSAGE_TOAST = 2;
+        public static final int CONNECTION_ACCEPTED = 3;
 
         // ... (Add other message types here as needed.)
     }
 
-
+//***********************************************************ACCEPT THREAD**************************************************
     private class AcceptThread extends Thread {
         private final BluetoothServerSocket mmServerSocket;
 
@@ -169,7 +241,10 @@ public class MainActivity extends AppCompatActivity {
                     // A connection was accepted. Perform work associated with
                     // the connection in a separate thread.
                     // manageMyConnectedSocket(socket);
-
+                    String deviceName = socket.getRemoteDevice().getName();
+                    Message connectionAcceptedMsg =
+                            mHandler.obtainMessage(MessageConstants.CONNECTION_ACCEPTED, deviceName);
+                    connectionAcceptedMsg.sendToTarget();
 
                     try {
                         mmServerSocket.close();
@@ -190,7 +265,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
-
+//**************************************************CONNECTED THREAD*************************************************************
     private class ConnectedThread extends Thread {
         private final BluetoothSocket mmSocket;
         private final InputStream mmInStream;

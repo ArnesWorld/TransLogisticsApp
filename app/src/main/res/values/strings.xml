@@ -5,4 +5,6 @@
     <string name="lblCompany">Company:</string>
     <string name="btnViewData">View Data</string>
     <string name="btnSendData">Send Data</string>
+    <string name="lblConnDevice">Connected Device</string>
+    <string name="btnDiscover">Make Discoverable</string>
 </resources>

@@ -23,7 +23,7 @@ public abstract class AppDataBase extends RoomDatabase {
     public static AppDataBase getInstance(Context context){
         if(INSTANCE == null){
             INSTANCE =
-                    Room.databaseBuilder(context.getApplicationContext(), AppDataBase.class,"TransLogicDeviceDB")
+                    Room.databaseBuilder(context.getApplicationContext(), AppDataBase.class,"TransLogicAppDB")
                             .allowMainThreadQueries().fallbackToDestructiveMigration()
                             .build();
         }
