@@ -40,11 +40,11 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.UUID;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends MenuActivity {
 
     private static final String TAG = "MainActivity";
     private static final int REQUEST_BLUETOOTH = 100;
-    private static final int DISCOVERY_REQUEST = 300;
+    private static final int DISCOVERY_REQUEST = 500;
     private static final int LOCATION_REQUEST_CODE = 50;
     private static final UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
@@ -124,6 +124,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         txtConnedtedDevice = findViewById(R.id.txtConnDevice);
+        /*
         if(bluetoothAdapter.getBondedDevices().size() != 0) {
             boolean matchFound = false;
             for (BluetoothDevice bd: bluetoothAdapter.getBondedDevices()) {
@@ -139,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
 
 
         }
-        setDiscoverability();
+*/
         btnDiscover = findViewById(R.id.btnDiscover);
         btnDiscover.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -147,6 +148,7 @@ public class MainActivity extends AppCompatActivity {
                 setDiscoverability();
             }
         });
+        setDiscoverability();
 
     }
 

@@ -26,6 +26,7 @@ dependencies {
     androidTestImplementation 'com.android.support.test:runner:1.0.1'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.1'
 
+
     //Google location service and maps
     compile 'com.google.android.gms:play-services-location:11.8.0'
     compile 'com.google.android.gms:play-services-maps:11.8.0'
@@ -43,7 +44,6 @@ dependencies {
     // Room (use 1.1.0-alpha2 for latest alpha)
     implementation "android.arch.persistence.room:runtime:1.0.0"
     annotationProcessor "android.arch.persistence.room:compiler:1.0.0"
-
 
     // Paging
     implementation "android.arch.paging:runtime:1.0.0-alpha5"
